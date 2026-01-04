@@ -40,6 +40,7 @@ button {
     margin-top:30px;
 }
 
+/* CARD */
 .card {
     position:relative;
     width:800px;
@@ -48,11 +49,11 @@ button {
     background:url("template.png") no-repeat center/cover;
 }
 
+/* PHOTO – FIXED ALIGNMENT (NO TRANSFORM) */
 .photo {
     position:absolute;
     top:224px;
-    left:49%;
-    transform:translateX(-50%);
+    left:230px;           /* 👈 fixed pixel value */
     width:340px;
     height:340px;
     border-radius:50%;
@@ -65,6 +66,7 @@ button {
     object-fit:cover;
 }
 
+/* NAME */
 .name {
     position:absolute;
     top:602px;
@@ -145,7 +147,9 @@ function generateCards(){
             const card = document.createElement("div");
             card.className = "card";
             card.innerHTML = `
-                <div class="photo"><img src="${e.target.result}"></div>
+                <div class="photo">
+                    <img src="${e.target.result}">
+                </div>
                 <div class="name">${u.name}</div>
                 <button onclick="copyCard(this)"
                   style="position:absolute;top:-20px;left:50%;transform:translateX(-50%)">
@@ -158,14 +162,20 @@ function generateCards(){
     });
 }
 
+/* 🔥 COPY FUNCTION – TRANSPARENT PNG FIX */
 function copyCard(btn){
     const card = btn.parentElement;
-    html2canvas(card).then(canvas=>{
-        canvas.toBlob(blob=>{
+
+    html2canvas(card, {
+        backgroundColor: null,  // ✅ NO WHITE BG
+        scale: 2,               // ✅ SHARP IMAGE
+        useCORS: true
+    }).then(canvas => {
+        canvas.toBlob(blob => {
             navigator.clipboard.write([
-                new ClipboardItem({"image/png":blob})
+                new ClipboardItem({ "image/png": blob })
             ]);
-            alert("Copied 🎉");
+            alert("Transparent PNG Copied ✅");
         });
     });
 }
