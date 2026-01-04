@@ -49,22 +49,19 @@ button {
     background:url("template.png") no-repeat center/cover;
 }
 
-/* ===== PHOTO (NO TRANSFORM, NO SQUEEZE) ===== */
+/* ===== PHOTO HOLDER (NO CSS CIRCLE) ===== */
 .photo {
     position:absolute;
     top:224px;
-    left:230px;              /* fixed pixel position */
+    left:230px;
     width:340px;
     height:340px;
-    border-radius:50%;
-    overflow:hidden;
 }
 
 .photo img {
-    display:block;           /* 🔥 CRITICAL */
     width:100%;
     height:100%;
-    object-fit:cover;
+    display:block;
 }
 
 /* ===== NAME ===== */
@@ -105,7 +102,44 @@ let users = [];
 /* ===== Title Case ===== */
 function toTitleCase(text) {
     return text.toLowerCase().split(" ").filter(Boolean)
-    .map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+        .map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
+}
+
+/* ===== REAL CIRCULAR IMAGE (NO SQUEEZE) ===== */
+function makeCircularImage(file, callback) {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = e => {
+        img.onload = () => {
+            const size = Math.min(img.width, img.height);
+            const canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+
+            const ctx = canvas.getContext("2d");
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.drawImage(
+                img,
+                (img.width - size) / 2,
+                (img.height - size) / 2,
+                size,
+                size,
+                0,
+                0,
+                size,
+                size
+            );
+
+            callback(canvas.toDataURL("image/png"));
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 /* ===== STEP 1: CREATE UPLOAD ROWS ===== */
@@ -146,13 +180,12 @@ function generateCards(){
     }
 
     users.forEach(u => {
-        const reader = new FileReader();
-        reader.onload = e => {
+        makeCircularImage(u.photo, (circleImg) => {
             const card = document.createElement("div");
             card.className = "card";
             card.innerHTML = `
                 <div class="photo">
-                    <img src="${e.target.result}">
+                    <img src="${circleImg}">
                 </div>
                 <div class="name">${u.name}</div>
                 <button onclick="copyCard(this)"
@@ -161,20 +194,19 @@ function generateCards(){
                 </button>
             `;
             container.appendChild(card);
-        };
-        reader.readAsDataURL(u.photo);
+        });
     });
 }
 
-/* ===== STEP 3: COPY – PERFECT PNG (NO SQUEEZE) ===== */
+/* ===== STEP 3: COPY – PERFECT PNG ===== */
 function copyCard(btn){
     const card = btn.parentElement;
     const scale = window.devicePixelRatio || 1;
 
     html2canvas(card, {
-        backgroundColor: null,          // transparent
-        scale: scale,                   // natural DPI
-        width: card.offsetWidth,        // exact size
+        backgroundColor: null,
+        scale: scale,
+        width: card.offsetWidth,
         height: card.offsetHeight,
         useCORS: true
     }).then(canvas => {
@@ -182,7 +214,7 @@ function copyCard(btn){
             navigator.clipboard.write([
                 new ClipboardItem({ "image/png": blob })
             ]);
-            alert("PNG copied perfectly ✅");
+            alert("Perfect PNG copied ✅");
         });
     });
 }
